@@ -20,10 +20,13 @@ import (
 
 	"github.com/spf13/cobra"
 	conf "go.krishnaiyer.dev/dry/pkg/config"
+	logger "go.krishnaiyer.dev/dry/pkg/logger"
+	"go.krishnaiyer.dev/mqtt-influx/pkg/http"
 )
 
 // Config contains the configuration.
 type Config struct {
+	HTTPAddress string `name:"http-address" description:"Address where the instrumentation HTTP server is served"`
 }
 
 var (
@@ -35,8 +38,8 @@ var (
 		Use:           "mqtt-influx",
 		SilenceErrors: true,
 		SilenceUsage:  true,
-		Short:         "mqtt-influx is a simple command line tool to parse CSV files and convert them to JSON",
-		Long:          `mqtt-influx is a simple command line tool to parse CSV files and convert them to JSON. More documentation at https://go.krishnaiyer.dev/mqtt-influx`,
+		Short:         "mqtt-influx is tool that acts as an MQTT broker for incoming traffic and writes it to an Influx DB instance.",
+		Long:          `mqtt-influx is tool that acts as an MQTT broker for incoming traffic and writes it to an Influx DB instance. More documentation at https://go.krishnaiyer.dev/mqtt-influx`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			err := manager.Unmarshal(config)
 			if err != nil {
@@ -51,15 +54,21 @@ var (
 
 			_ = ctx
 
-			// logger
+			l, err := logger.New(baseCtx, false)
+			if err != nil {
+				panic(err)
+			}
 
-			// logger, err := zephyrus.New(context.Background(), config.Debug)
-			// if err != nil {
-			// 	log.Fatal(err.Error())
-			// }
-			// defer logger.Clean()
-			// ctx := zephyrus.NewContextWithLogger(context.Background(), logger)
+			ctx = logger.NewContextWithLogger(baseCtx, l)
 
+			// Start the HTTP Server.
+			s := http.New()
+			go func() {
+				err := s.Start(ctx, config.HTTPAddress)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}()
 		},
 	}
 )
