@@ -17,16 +17,21 @@ package cmd
 import (
 	"context"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/spf13/cobra"
 	conf "go.krishnaiyer.dev/dry/pkg/config"
 	logger "go.krishnaiyer.dev/dry/pkg/logger"
 	"go.krishnaiyer.dev/mqtt-influx/pkg/http"
+	"go.krishnaiyer.dev/mqtt-influx/pkg/mqtt"
 )
 
 // Config contains the configuration.
 type Config struct {
-	HTTPAddress string `name:"http-address" description:"Address where the instrumentation HTTP server is served"`
+	http http.Config `name:"http" description:"configure the instrumentation HTTP server"`
+	mqtt mqtt.Config `name:"mqtt" description:"configure the MQTT server"`
 }
 
 var (
@@ -38,8 +43,8 @@ var (
 		Use:           "mqtt-influx",
 		SilenceErrors: true,
 		SilenceUsage:  true,
-		Short:         "mqtt-influx is tool that acts as an MQTT broker for incoming traffic and writes it to an Influx DB instance.",
-		Long:          `mqtt-influx is tool that acts as an MQTT broker for incoming traffic and writes it to an Influx DB instance. More documentation at https://go.krishnaiyer.dev/mqtt-influx`,
+		Short:         "mqtt-influx is tool that acts as an MQTT server for incoming traffic and writes it to an Influx DB instance.",
+		Long:          `mqtt-influx is tool that acts as an MQTT server for incoming traffic and writes it to an Influx DB instance. More documentation at https://go.krishnaiyer.dev/mqtt-influx`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			err := manager.ReadFromFile(cmd.Flags())
 			if err != nil {
@@ -65,12 +70,28 @@ var (
 			ctx = logger.NewContextWithLogger(baseCtx, l)
 
 			// Start the HTTP Server.
-			s := http.New()
-			l.WithField("address", config.HTTPAddress).Info("Start HTTP server")
-			err = s.Start(ctx, config.HTTPAddress)
-			if err != nil {
-				log.Fatal(err)
-			}
+			go func() {
+				s := http.New(config.http)
+				err = s.Start(ctx)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}()
+
+			// Start the MQTT Server.
+			go func() {
+				s := mqtt.New(ctx, config.mqtt)
+				err = s.Start(ctx)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}()
+
+			// Wait for a signal to stop the server.
+			sigChan := make(chan os.Signal, 1)
+			signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+			signal := (<-sigChan).String()
+			l.WithField("signal", signal).Info("Signal received. Shut down server")
 		},
 	}
 )

@@ -1,1 +1,4 @@
-http-address: "localhost:8080"
+http:
+  address: "localhost:8080"
+mqtt:
+  address: "localhost:1883"

@@ -12,56 +12,64 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package http provides a simple HTTP Server for instrumentation.
-package http
+// Package mqtt provides an MQTT broker.
+package mqtt
 
 import (
 	"context"
-	"net/http"
-	"time"
 
-	"github.com/gorilla/mux"
 	"go.krishnaiyer.dev/dry/pkg/logger"
+
+	mqttnet "github.com/TheThingsIndustries/mystique/pkg/net"
+	mqtt "github.com/TheThingsIndustries/mystique/pkg/server"
 )
 
-// Config is the configuration for the HTTP server.
+// Config is the configuration for the MQTT server.
 type Config struct {
 	Addr string `name:"address" description:"server address"`
 }
 
-// Server is an HTTP server.
+// Server is an MQTT server.
 type Server struct {
-	s *http.Server
-	c Config
+	srv mqtt.Server
+	c   Config
 }
 
 // New creates a new Server.
-func New(c Config) *Server {
-	r := mux.NewRouter()
-	r.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("ok"))
-	})
+func New(ctx context.Context, c Config) *Server {
 	return &Server{
-		c: c,
-		s: &http.Server{
-			Addr:           c.Addr,
-			Handler:        r,
-			ReadTimeout:    10 * time.Second,
-			WriteTimeout:   10 * time.Second,
-			MaxHeaderBytes: 1 << 20,
-		},
+		srv: mqtt.New(ctx),
+		c:   c,
 	}
 }
 
-// Start starts the HTTP server.
+// Start starts the MQTT server.
 func (s *Server) Start(ctx context.Context) error {
-	logger.LoggerFromContext(ctx).WithField("address", s.c.Addr).Info("Start HTTP server")
+	logger := logger.LoggerFromContext(ctx)
+
+	// Start a TCP listener at the given address.
+	lis, err := mqttnet.Listen("tcp", s.c.Addr)
+	if err != nil {
+		return err
+	}
+	defer lis.Close()
+
+	go func() {
+		for {
+			// Each connection here is equivalent to an MQTT `CONNECT`.
+			conn, err := lis.Accept()
+			if err != nil {
+				// TODO: Add WithError() method to logger.
+				logger.Error(err.Error())
+				return
+			}
+			go s.srv.Handle(conn)
+		}
+	}()
+	logger.WithField("address", s.c.Addr).Info("Start MQTT server")
+
 	select {
 	case <-ctx.Done():
-		s.s.Shutdown(ctx)
 		return ctx.Err()
-	default:
-		return s.s.ListenAndServe()
 	}
 }
