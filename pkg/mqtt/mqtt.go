@@ -20,13 +20,15 @@ import (
 
 	"go.krishnaiyer.dev/dry/pkg/logger"
 
+	"github.com/TheThingsIndustries/mystique/pkg/apex"
 	mqttnet "github.com/TheThingsIndustries/mystique/pkg/net"
 	mqtt "github.com/TheThingsIndustries/mystique/pkg/server"
 )
 
 // Config is the configuration for the MQTT server.
 type Config struct {
-	Addr string `name:"address" description:"server address"`
+	Addr  string `name:"address" description:"server address"`
+	Debug bool   `name:"debug" description:"enable debug mode"`
 }
 
 // Server is an MQTT server.
@@ -37,6 +39,9 @@ type Server struct {
 
 // New creates a new Server.
 func New(ctx context.Context, c Config) *Server {
+	if c.Debug {
+		apex.SetLevelFromString("debug")
+	}
 	return &Server{
 		srv: mqtt.New(ctx),
 		c:   c,

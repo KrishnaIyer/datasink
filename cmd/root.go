@@ -30,12 +30,12 @@ import (
 
 // Config contains the configuration.
 type Config struct {
-	http http.Config `name:"http" description:"configure the instrumentation HTTP server"`
-	mqtt mqtt.Config `name:"mqtt" description:"configure the MQTT server"`
+	HTTP http.Config `name:"http"`
+	MQTT mqtt.Config `name:"mqtt"`
 }
 
 var (
-	config  = new(Config)
+	config  Config
 	manager *conf.Manager
 
 	// Root is the root of the commands.
@@ -50,7 +50,7 @@ var (
 			if err != nil {
 				panic(err)
 			}
-			err = manager.Unmarshal(config)
+			err = manager.Unmarshal(&config)
 			if err != nil {
 				panic(err)
 			}
@@ -71,7 +71,7 @@ var (
 
 			// Start the HTTP Server.
 			go func() {
-				s := http.New(config.http)
+				s := http.New(config.HTTP)
 				err = s.Start(ctx)
 				if err != nil {
 					log.Fatal(err)
@@ -80,7 +80,7 @@ var (
 
 			// Start the MQTT Server.
 			go func() {
-				s := mqtt.New(ctx, config.mqtt)
+				s := mqtt.New(ctx, config.MQTT)
 				err = s.Start(ctx)
 				if err != nil {
 					log.Fatal(err)
@@ -105,7 +105,7 @@ func Execute() {
 
 func init() {
 	manager = conf.New("config")
-	manager.InitFlags(*config)
+	manager.InitFlags(config)
 	Root.PersistentFlags().AddFlagSet(manager.Flags())
 	Root.AddCommand(VersionCommand(Root))
 	manager.AddConfigFlag(Root.Flags())
