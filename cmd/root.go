@@ -41,7 +41,11 @@ var (
 		Short:         "mqtt-influx is tool that acts as an MQTT broker for incoming traffic and writes it to an Influx DB instance.",
 		Long:          `mqtt-influx is tool that acts as an MQTT broker for incoming traffic and writes it to an Influx DB instance. More documentation at https://go.krishnaiyer.dev/mqtt-influx`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			err := manager.Unmarshal(config)
+			err := manager.ReadFromFile(cmd.Flags())
+			if err != nil {
+				panic(err)
+			}
+			err = manager.Unmarshal(config)
 			if err != nil {
 				panic(err)
 			}
@@ -58,17 +62,15 @@ var (
 			if err != nil {
 				panic(err)
 			}
-
 			ctx = logger.NewContextWithLogger(baseCtx, l)
 
 			// Start the HTTP Server.
 			s := http.New()
-			go func() {
-				err := s.Start(ctx, config.HTTPAddress)
-				if err != nil {
-					log.Fatal(err)
-				}
-			}()
+			l.WithField("address", config.HTTPAddress).Info("Start HTTP server")
+			err = s.Start(ctx, config.HTTPAddress)
+			if err != nil {
+				log.Fatal(err)
+			}
 		},
 	}
 )
@@ -85,4 +87,5 @@ func init() {
 	manager.InitFlags(*config)
 	Root.PersistentFlags().AddFlagSet(manager.Flags())
 	Root.AddCommand(VersionCommand(Root))
+	manager.AddConfigFlag(Root.Flags())
 }
