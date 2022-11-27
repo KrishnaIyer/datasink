@@ -28,7 +28,7 @@ type Store struct {
 func NewStore(file string) (*Store, error) {
 	st, err := htpasswd.New(file, htpasswd.DefaultSystems, nil)
 	if err != nil {
-		return nil, err
+		return &Store{}, err
 	}
 	return &Store{
 		store: st,

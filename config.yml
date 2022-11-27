@@ -3,5 +3,7 @@ http:
 mqtt:
   address: "localhost:1883"
   debug: true
-auth:
-  htpasswd-file: "./test.htpasswd"
+  auth:
+    type: "htpasswd"
+    htpasswd-file: "./test.htpasswd"
+

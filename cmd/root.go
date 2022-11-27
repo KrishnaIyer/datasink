@@ -22,8 +22,6 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
-	"go.krishnaiyer.dev/datasink/pkg/auth"
-	"go.krishnaiyer.dev/datasink/pkg/auth/htpasswd"
 	"go.krishnaiyer.dev/datasink/pkg/http"
 	"go.krishnaiyer.dev/datasink/pkg/mqtt"
 	conf "go.krishnaiyer.dev/dry/pkg/config"
@@ -34,9 +32,6 @@ import (
 type Config struct {
 	HTTP http.Config `name:"http"`
 	MQTT mqtt.Config `name:"mqtt"`
-	Auth struct {
-		Htpasswd string `name:"htpasswd-file" description:"location of the htpasswd file"`
-	} `name:"auth"`
 }
 
 var (
@@ -72,16 +67,8 @@ var (
 			}
 			ctx = logger.NewContextWithLogger(baseCtx, l)
 
-			// Setup Auth Store.
-			var store auth.Store
-			if config.Auth.Htpasswd != "" {
-				store, err = htpasswd.NewStore(config.Auth.Htpasswd)
-				if err != nil {
-					return err
-				}
-			}
-
-			errCh := make(chan error, 1)
+			errCh := make(chan error)
+			defer close(errCh)
 
 			// Start the HTTP Server.
 			go func() {
@@ -89,15 +76,21 @@ var (
 				err = s.Start(ctx)
 				if err != nil {
 					errCh <- err
+					return
 				}
 			}()
 
 			// Start the MQTT Server.
 			go func() {
-				s := mqtt.New(ctx, config.MQTT, store)
+				s, err := mqtt.New(ctx, config.MQTT)
+				if err != nil {
+					errCh <- err
+					return
+				}
 				err = s.Start(ctx)
 				if err != nil {
 					errCh <- err
+					return
 				}
 			}()
 

@@ -33,8 +33,9 @@ import (
 
 // Config is the configuration for the MQTT server.
 type Config struct {
-	Addr  string `name:"address" description:"server address"`
-	Debug bool   `name:"debug" description:"enable debug mode"`
+	Addr  string      `name:"address" description:"server address"`
+	Debug bool        `name:"debug" description:"enable debug mode"`
+	Auth  auth.Config `name:"auth" description:"authentication configuration"`
 }
 
 // Server is an MQTT server.
@@ -45,27 +46,27 @@ type Server struct {
 }
 
 // New creates a new Server.
-func New(ctx context.Context, c Config, store auth.Store) *Server {
+func New(ctx context.Context, c Config) (*Server, error) {
 	if c.Debug {
 		apex.SetLevelFromString("debug")
+	}
+
+	auth, err := c.Auth.NewStore()
+	if err != nil {
+		return nil, err
 	}
 	return &Server{
 		srv:  mqtt.New(ctx),
 		c:    c,
-		auth: store,
-	}
+		auth: auth,
+	}, nil
 }
 
 // Start starts the MQTT server.
 func (s *Server) Start(ctx context.Context) error {
 	logger := logger.LoggerFromContext(ctx)
-
-	errCh := make(chan error, 1)
 	ctx, cancel := context.WithCancel(ctx)
-	defer func() {
-		cancel()
-		close(errCh)
-	}()
+	defer cancel()
 
 	// Start a TCP listener at the given address.
 	lis, err := mqttnet.Listen("tcp", s.c.Addr)

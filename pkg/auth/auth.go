@@ -16,7 +16,29 @@
 // Currently reading passwords from a htpasswd file is supported.
 package auth
 
+import (
+	"fmt"
+
+	"go.krishnaiyer.dev/datasink/pkg/auth/htpasswd"
+)
+
 // Store is a generic auth store.
 type Store interface {
 	Verify(user, pass string) bool
+}
+
+// Config is the auth configuration.
+type Config struct {
+	Type         string `name:"type" description:"authentication file type. Supported values are 'htpasswd'"`
+	HtpasswdFile string `name:"htpasswd-file" description:"location of the htpasswd file"`
+}
+
+// NewStore creates a new auth store.
+func (c Config) NewStore() (Store, error) {
+	switch c.Type {
+	case "htpasswd":
+		return htpasswd.NewStore(c.HtpasswdFile)
+	default:
+		return nil, fmt.Errorf("invalid auth type '%s'", c.Type)
+	}
 }
