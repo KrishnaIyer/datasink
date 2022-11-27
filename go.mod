@@ -1,4 +1,4 @@
-module go.krishnaiyer.dev/mqtt-influx
+module go.krishnaiyer.dev/datasink
 
 go 1.19
 
@@ -6,12 +6,14 @@ require (
 	github.com/TheThingsIndustries/mystique v0.0.0-20211230093812-d4088bd06959
 	github.com/gorilla/mux v1.8.0
 	github.com/spf13/cobra v1.6.1
+	github.com/tg123/go-htpasswd v1.2.0
 	go.krishnaiyer.dev/dry v0.0.0-20220915092746-69d04fd20a60
 )
 
 replace github.com/TheThingsIndustries/mystique => ../../github.com/TheThingsIndustries/mystique
 
 require (
+	github.com/GehirnInc/crypt v0.0.0-20200316065508-bb7000b8a962 // indirect
 	github.com/apex/log v1.9.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
@@ -38,6 +40,7 @@ require (
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.22.0 // indirect
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/text v0.3.7 // indirect

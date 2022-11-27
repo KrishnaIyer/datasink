@@ -22,16 +22,21 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
+	"go.krishnaiyer.dev/datasink/pkg/auth"
+	"go.krishnaiyer.dev/datasink/pkg/auth/htpasswd"
+	"go.krishnaiyer.dev/datasink/pkg/http"
+	"go.krishnaiyer.dev/datasink/pkg/mqtt"
 	conf "go.krishnaiyer.dev/dry/pkg/config"
 	logger "go.krishnaiyer.dev/dry/pkg/logger"
-	"go.krishnaiyer.dev/mqtt-influx/pkg/http"
-	"go.krishnaiyer.dev/mqtt-influx/pkg/mqtt"
 )
 
 // Config contains the configuration.
 type Config struct {
 	HTTP http.Config `name:"http"`
 	MQTT mqtt.Config `name:"mqtt"`
+	Auth struct {
+		Htpasswd string `name:"htpasswd-file" description:"location of the htpasswd file"`
+	} `name:"auth"`
 }
 
 var (
@@ -40,11 +45,11 @@ var (
 
 	// Root is the root of the commands.
 	Root = &cobra.Command{
-		Use:           "mqtt-influx",
+		Use:           "datasink",
 		SilenceErrors: true,
 		SilenceUsage:  true,
-		Short:         "mqtt-influx is tool that acts as an MQTT server for incoming traffic and writes it to an Influx DB instance.",
-		Long:          `mqtt-influx is tool that acts as an MQTT server for incoming traffic and writes it to an Influx DB instance. More documentation at https://go.krishnaiyer.dev/mqtt-influx`,
+		Short:         "datasink is tool that acts as acts as a server with multiple protocols (ex: mqtt, websocket) for incoming traffic and writes to a time series database",
+		Long:          `datasink is tool that acts as acts as a server with multiple protocols (ex: mqtt, websocket) for incoming traffic and writes to a time series database. More documentation at https://go.krishnaiyer.dev/datasink`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			err := manager.ReadFromFile(cmd.Flags())
 			if err != nil {
@@ -56,12 +61,10 @@ var (
 			}
 			return nil
 		},
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			baseCtx := context.Background()
 			ctx, cancel := context.WithCancel(baseCtx)
 			defer cancel()
-
-			_ = ctx
 
 			l, err := logger.New(baseCtx, false)
 			if err != nil {
@@ -69,29 +72,48 @@ var (
 			}
 			ctx = logger.NewContextWithLogger(baseCtx, l)
 
+			// Setup Auth Store.
+			var store auth.Store
+			if config.Auth.Htpasswd != "" {
+				store, err = htpasswd.NewStore(config.Auth.Htpasswd)
+				if err != nil {
+					return err
+				}
+			}
+
+			errCh := make(chan error, 1)
+
 			// Start the HTTP Server.
 			go func() {
 				s := http.New(config.HTTP)
 				err = s.Start(ctx)
 				if err != nil {
-					log.Fatal(err)
+					errCh <- err
 				}
 			}()
 
 			// Start the MQTT Server.
 			go func() {
-				s := mqtt.New(ctx, config.MQTT)
+				s := mqtt.New(ctx, config.MQTT, store)
 				err = s.Start(ctx)
 				if err != nil {
-					log.Fatal(err)
+					errCh <- err
 				}
 			}()
 
-			// Wait for a signal to stop the server.
-			sigChan := make(chan os.Signal, 1)
-			signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-			signal := (<-sigChan).String()
-			l.WithField("signal", signal).Info("Signal received. Shut down server")
+			select {
+			case err := <-errCh:
+				return err
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+				// Wait for a signal to stop the server.
+				sigChan := make(chan os.Signal, 1)
+				signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+				signal := (<-sigChan).String()
+				l.WithField("signal", signal).Info("Signal received. Shut down server")
+				return nil
+			}
 		},
 	}
 )

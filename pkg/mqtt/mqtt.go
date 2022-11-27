@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 
+	"go.krishnaiyer.dev/datasink/pkg/auth"
 	"go.krishnaiyer.dev/dry/pkg/logger"
 
 	"github.com/TheThingsIndustries/mystique/pkg/apex"
@@ -38,18 +39,20 @@ type Config struct {
 
 // Server is an MQTT server.
 type Server struct {
-	srv mqtt.Server
-	c   Config
+	srv  mqtt.Server
+	c    Config
+	auth auth.Store
 }
 
 // New creates a new Server.
-func New(ctx context.Context, c Config) *Server {
+func New(ctx context.Context, c Config, store auth.Store) *Server {
 	if c.Debug {
 		apex.SetLevelFromString("debug")
 	}
 	return &Server{
-		srv: mqtt.New(ctx),
-		c:   c,
+		srv:  mqtt.New(ctx),
+		c:    c,
+		auth: store,
 	}
 }
 
@@ -109,6 +112,10 @@ func (s *Server) handleConnection(ctx context.Context, conn mqttnet.Conn) {
 	defer session.Close()
 
 	// Check auth and allowed topic access from the incoming connection.
+	if s.auth != nil && !s.auth.Verify(session.AuthInfo().Username, string(session.AuthInfo().Password)) {
+		logger.Error("Invalid credentials for user")
+		return
+	}
 
 	controlCh := make(chan packet.ControlPacket)
 	errCh := make(chan error, 1)
@@ -155,5 +162,7 @@ func (s *Server) handleConnection(ctx context.Context, conn mqttnet.Conn) {
 
 // deliver is a callback attached to the initial session to read all submitted packets.
 func (s *Server) deliver(pkt *packet.PublishPacket) {
+
+	// Only store required topics.
 	fmt.Println("Received packet:", pkt)
 }

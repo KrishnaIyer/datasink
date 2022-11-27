@@ -1,8 +1,18 @@
-# mqtt-influx
+# datasink
 
-A simple Go package that acts as an MQTT server for incoming traffic and writes it to an Influx DB instance.
+A simple Go package that acts as a server with multiple protocols (ex: mqtt, websocket) for incoming traffic and writes to a time series database (ex: InfluxDB).
 
 This project uses [mystique](https://github.com/TheThingsIndustries/mystique) for the MQTT server implementation.
+
+## Usage
+
+
+### Auth
+
+Create an htpasswd file.
+```
+$ htpasswd -c test.htpasswd test
+```
 
 ## License
 

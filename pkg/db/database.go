@@ -12,12 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+// Package database abstracts database functions.
+package database
 
-import (
-	"go.krishnaiyer.dev/datasink/cmd"
-)
-
-func main() {
-	cmd.Execute()
+// Database is a database.
+type Database interface {
 }
