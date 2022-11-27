@@ -9,6 +9,8 @@ require (
 	go.krishnaiyer.dev/dry v0.0.0-20220915092746-69d04fd20a60
 )
 
+replace github.com/TheThingsIndustries/mystique => ../../github.com/TheThingsIndustries/mystique
+
 require (
 	github.com/apex/log v1.9.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

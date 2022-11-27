@@ -17,12 +17,17 @@ package mqtt
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"io"
 
 	"go.krishnaiyer.dev/dry/pkg/logger"
 
 	"github.com/TheThingsIndustries/mystique/pkg/apex"
 	mqttnet "github.com/TheThingsIndustries/mystique/pkg/net"
+	"github.com/TheThingsIndustries/mystique/pkg/packet"
 	mqtt "github.com/TheThingsIndustries/mystique/pkg/server"
+	"github.com/TheThingsIndustries/mystique/pkg/session"
 )
 
 // Config is the configuration for the MQTT server.
@@ -52,6 +57,13 @@ func New(ctx context.Context, c Config) *Server {
 func (s *Server) Start(ctx context.Context) error {
 	logger := logger.LoggerFromContext(ctx)
 
+	errCh := make(chan error, 1)
+	ctx, cancel := context.WithCancel(ctx)
+	defer func() {
+		cancel()
+		close(errCh)
+	}()
+
 	// Start a TCP listener at the given address.
 	lis, err := mqttnet.Listen("tcp", s.c.Addr)
 	if err != nil {
@@ -59,22 +71,89 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 	defer lis.Close()
 
-	go func() {
-		for {
-			// Each connection here is equivalent to an MQTT `CONNECT`.
-			conn, err := lis.Accept()
-			if err != nil {
-				// TODO: Add WithError() method to logger.
-				logger.Error(err.Error())
-				return
-			}
-			go s.srv.Handle(conn)
-		}
-	}()
 	logger.WithField("address", s.c.Addr).Info("Start MQTT server")
 
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
+	// Loop incoming connections and handle them.
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			conn, err := lis.Accept()
+			if err != nil {
+				return err
+			}
+			// handleConnection closes the connection when done so we don't need to do it here.
+			go s.handleConnection(ctx, conn)
+		}
 	}
+}
+
+// handleConnection handles a single connection.
+func (s *Server) handleConnection(ctx context.Context, conn mqttnet.Conn) {
+	logger := logger.LoggerFromContext(ctx).WithField("remote_addr", conn.RemoteAddr().String())
+	logger.Info("Connect")
+	defer func() {
+		logger.Info("Disconnect")
+		defer conn.Close()
+	}()
+
+	session := session.New(ctx, conn, s.deliver)
+
+	// Handle the `CONNECT` packet. This method sends back `CONNACK` packet.
+	if err := session.ReadConnect(); err != nil {
+		// TODO: Add WithError semantics.
+		logger.Error(fmt.Sprintf("Read connect packet: %s", err))
+		return
+	}
+	defer session.Close()
+
+	// Check auth and allowed topic access from the incoming connection.
+
+	controlCh := make(chan packet.ControlPacket)
+	errCh := make(chan error, 1)
+	// Read packets from the connection.
+	go func() {
+		for {
+			response, err := session.ReadPacket()
+			if err != nil {
+				errCh <- err
+				close(errCh)
+				return
+			}
+			if response != nil {
+				controlCh <- response
+			}
+		}
+	}()
+
+	for {
+		var (
+			pkt packet.ControlPacket
+		)
+		select {
+		case err := <-errCh:
+			if !errors.Is(err, io.EOF) {
+				logger.Error(fmt.Sprintf("Read packet: %s", err))
+			}
+			return
+		case pkt = <-controlCh:
+			err := conn.Send(pkt)
+			if err != nil {
+				logger.Error(fmt.Sprintf("Publish packet: %s", err))
+				return
+			}
+		case pkt = <-session.PublishChan():
+			// PublishChan intercepts publish packets.
+			// We can use this branch to observe latency or check rate limits.
+			// Once done, we can use conn.Send().
+			// In this case since we are only listening for incoming connections
+			// and writing them to a Database, we don't actually publish anything to subscribers.
+		}
+	}
+}
+
+// deliver is a callback attached to the initial session to read all submitted packets.
+func (s *Server) deliver(pkt *packet.PublishPacket) {
+	fmt.Println("Received packet:", pkt)
 }
