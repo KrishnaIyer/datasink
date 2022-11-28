@@ -6,4 +6,3 @@ mqtt:
   auth:
     type: "htpasswd"
     htpasswd-file: "./test.htpasswd"
-

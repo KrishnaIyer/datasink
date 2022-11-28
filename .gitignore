@@ -16,3 +16,6 @@
 
 # Build files
 main
+
+# Development folder
+.dev
