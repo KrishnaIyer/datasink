@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"go.krishnaiyer.dev/dry/pkg/logger"
+	"krishnaiyer.dev/dry/pkg/logger"
 )
 
 // Config is the configuration for the HTTP server.

@@ -22,7 +22,7 @@ import (
 	"io"
 
 	"go.krishnaiyer.dev/datasink/pkg/auth"
-	"go.krishnaiyer.dev/dry/pkg/logger"
+	"krishnaiyer.dev/dry/pkg/logger"
 
 	"github.com/TheThingsIndustries/mystique/pkg/apex"
 	mqttnet "github.com/TheThingsIndustries/mystique/pkg/net"

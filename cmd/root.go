@@ -22,16 +22,18 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
+	"go.krishnaiyer.dev/datasink/pkg/database"
 	"go.krishnaiyer.dev/datasink/pkg/http"
 	"go.krishnaiyer.dev/datasink/pkg/mqtt"
-	conf "go.krishnaiyer.dev/dry/pkg/config"
-	logger "go.krishnaiyer.dev/dry/pkg/logger"
+	conf "krishnaiyer.dev/dry/pkg/config"
+	logger "krishnaiyer.dev/dry/pkg/logger"
 )
 
 // Config contains the configuration.
 type Config struct {
-	HTTP http.Config `name:"http"`
-	MQTT mqtt.Config `name:"mqtt"`
+	HTTP     http.Config     `name:"http"`
+	MQTT     mqtt.Config     `name:"mqtt"`
+	Database database.Config `name:"database"`
 }
 
 var (

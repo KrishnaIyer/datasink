@@ -9,6 +9,5 @@ services:
       DOCKER_INFLUXDB_INIT_BUCKET: test_sensors
     volumes:
     - ./.dev/influxdb:/var/lib/influxdb2
-
 volumes:
   influxdb2:

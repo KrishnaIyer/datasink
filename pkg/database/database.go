@@ -15,6 +15,21 @@
 // Package database abstracts database functions.
 package database
 
+import (
+	"context"
+
+	"go.krishnaiyer.dev/datasink/pkg/database/entry"
+	"go.krishnaiyer.dev/datasink/pkg/database/influxdb"
+)
+
+// Config defines the database configuration.
+type Config struct {
+	Type     string          `name:"type" description:"The type of database to use. Ex: influxdb"`
+	InfluxDB influxdb.Config `name:"influxdb"`
+}
+
 // Database is a database.
 type Database interface {
+	// Record records an entry.
+	Record(ctx context.Context, entry entry.Entry) error
 }

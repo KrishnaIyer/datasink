@@ -1,13 +1,14 @@
-module go.krishnaiyer.dev/datasink
+module krishnaiyer.dev/datasink
 
 go 1.19
 
 require (
 	github.com/TheThingsIndustries/mystique v0.0.0-20211230093812-d4088bd06959
 	github.com/gorilla/mux v1.8.0
+	github.com/influxdata/influxdb-client-go/v2 v2.12.0
 	github.com/spf13/cobra v1.6.1
 	github.com/tg123/go-htpasswd v1.2.0
-	go.krishnaiyer.dev/dry v0.0.0-20220915092746-69d04fd20a60
+	krishnaiyer.dev/dry v0.0.0-20221129144751-2455943d63ac
 )
 
 replace github.com/TheThingsIndustries/mystique => ../../github.com/TheThingsIndustries/mystique
@@ -17,10 +18,12 @@ require (
 	github.com/apex/log v1.9.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
+	github.com/deepmap/oapi-codegen v1.8.2 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -49,4 +52,5 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	krishnaiyer.dev/golang/dry v0.0.0-20221129144751-2455943d63ac // indirect
 )
