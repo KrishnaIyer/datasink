@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"io"
 
-	"go.krishnaiyer.dev/datasink/pkg/auth"
-	"krishnaiyer.dev/dry/pkg/logger"
+	"krishnaiyer.dev/golang/datasink/pkg/auth"
+	"krishnaiyer.dev/golang/dry/pkg/logger"
 
 	"github.com/TheThingsIndustries/mystique/pkg/apex"
 	mqttnet "github.com/TheThingsIndustries/mystique/pkg/net"

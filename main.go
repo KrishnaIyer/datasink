@@ -15,7 +15,7 @@
 package main
 
 import (
-	"go.krishnaiyer.dev/datasink/cmd"
+	"krishnaiyer.dev/golang/datasink/cmd"
 )
 
 func main() {

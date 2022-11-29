@@ -20,7 +20,7 @@ package auth
 import (
 	"net/http"
 
-	"go.krishnaiyer.dev/datasink/pkg/auth"
+	"krishnaiyer.dev/golang/datasink/pkg/auth"
 )
 
 // Auth abstracts basic authentication.

@@ -22,11 +22,11 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
-	"go.krishnaiyer.dev/datasink/pkg/database"
-	"go.krishnaiyer.dev/datasink/pkg/http"
-	"go.krishnaiyer.dev/datasink/pkg/mqtt"
-	conf "krishnaiyer.dev/dry/pkg/config"
-	logger "krishnaiyer.dev/dry/pkg/logger"
+	"krishnaiyer.dev/golang/datasink/pkg/database"
+	"krishnaiyer.dev/golang/datasink/pkg/http"
+	"krishnaiyer.dev/golang/datasink/pkg/mqtt"
+	conf "krishnaiyer.dev/golang/dry/pkg/config"
+	logger "krishnaiyer.dev/golang/dry/pkg/logger"
 )
 
 // Config contains the configuration.
@@ -46,7 +46,7 @@ var (
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		Short:         "datasink is tool that acts as acts as a server with multiple protocols (ex: mqtt, websocket) for incoming traffic and writes to a time series database",
-		Long:          `datasink is tool that acts as acts as a server with multiple protocols (ex: mqtt, websocket) for incoming traffic and writes to a time series database. More documentation at https://go.krishnaiyer.dev/datasink`,
+		Long:          `datasink is tool that acts as acts as a server with multiple protocols (ex: mqtt, websocket) for incoming traffic and writes to a time series database. More documentation at https://krishnaiyer.dev/golang/datasink`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			err := manager.ReadFromFile(cmd.Flags())
 			if err != nil {

@@ -20,7 +20,7 @@ import (
 	"time"
 
 	influxdb "github.com/influxdata/influxdb-client-go/v2"
-	"go.krishnaiyer.dev/datasink/pkg/database/entry"
+	"krishnaiyer.dev/golang/datasink/pkg/database/entry"
 )
 
 const (
@@ -36,8 +36,8 @@ type Config struct {
 	// If set to false (default), blocking write API is used, which is more reliable.
 	NonBlockingWrites struct {
 		Enabled       bool `name:"enabled" description:"enable non-blocking writes"`
-		BatchSize     int  `name:"address" description:"batch size"`
-		FlushInterval int  `name:"address" description:"flush interval"`
+		BatchSize     int  `name:"batch_size" description:"batch size"`
+		FlushInterval int  `name:"flush_interval" description:"flush interval"`
 	} `name:"non_blocking_writes"`
 	Address      string        `name:"address" description:"server address"`
 	Token        string        `name:"token" description:"auth token"`

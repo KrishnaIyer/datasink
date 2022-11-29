@@ -19,7 +19,7 @@ package auth
 import (
 	"fmt"
 
-	"go.krishnaiyer.dev/datasink/pkg/auth/htpasswd"
+	"krishnaiyer.dev/golang/datasink/pkg/auth/htpasswd"
 )
 
 // Store is a generic auth store.

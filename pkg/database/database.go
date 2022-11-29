@@ -18,8 +18,8 @@ package database
 import (
 	"context"
 
-	"go.krishnaiyer.dev/datasink/pkg/database/entry"
-	"go.krishnaiyer.dev/datasink/pkg/database/influxdb"
+	"krishnaiyer.dev/golang/datasink/pkg/database/entry"
+	"krishnaiyer.dev/golang/datasink/pkg/database/influxdb"
 )
 
 // Config defines the database configuration.

@@ -1,4 +1,4 @@
-module krishnaiyer.dev/datasink
+module krishnaiyer.dev/golang/datasink
 
 go 1.19
 
@@ -8,10 +8,11 @@ require (
 	github.com/influxdata/influxdb-client-go/v2 v2.12.0
 	github.com/spf13/cobra v1.6.1
 	github.com/tg123/go-htpasswd v1.2.0
-	krishnaiyer.dev/dry v0.0.0-20221129144751-2455943d63ac
+	krishnaiyer.dev/golang/dry v0.0.0-20221129144751-2455943d63ac
 )
 
-replace github.com/TheThingsIndustries/mystique => ../../github.com/TheThingsIndustries/mystique
+// TODO: Remove this after the first release
+replace github.com/TheThingsIndustries/mystique => ../../../github.com/TheThingsIndustries/mystique
 
 require (
 	github.com/GehirnInc/crypt v0.0.0-20200316065508-bb7000b8a962 // indirect
@@ -52,5 +53,4 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	krishnaiyer.dev/golang/dry v0.0.0-20221129144751-2455943d63ac // indirect
 )
