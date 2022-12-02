@@ -17,6 +17,7 @@ package database
 
 import (
 	"context"
+	"time"
 
 	"krishnaiyer.dev/golang/datasink/pkg/database/entry"
 	"krishnaiyer.dev/golang/datasink/pkg/database/influxdb"
@@ -32,4 +33,6 @@ type Config struct {
 type Database interface {
 	// Record records an entry.
 	Record(ctx context.Context, entry entry.Entry) error
+	// Query queries the database.
+	Query(ctx context.Context, query string) (map[time.Time]any, error)
 }
