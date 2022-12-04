@@ -37,8 +37,9 @@ type Config struct {
 }
 
 var (
-	config  Config
+	config  = &Config{}
 	manager *conf.Manager
+	baseCtx = context.Background()
 
 	// Root is the root of the commands.
 	Root = &cobra.Command{
@@ -59,15 +60,14 @@ var (
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			baseCtx := context.Background()
 			ctx, cancel := context.WithCancel(baseCtx)
 			defer cancel()
 
-			l, err := logger.New(baseCtx, false)
+			l, err := logger.New(ctx, false)
 			if err != nil {
 				panic(err)
 			}
-			ctx = logger.NewContextWithLogger(baseCtx, l)
+			ctx = logger.NewContextWithLogger(ctx, l)
 
 			errCh := make(chan error)
 			defer close(errCh)
@@ -122,8 +122,10 @@ func Execute() {
 
 func init() {
 	manager = conf.New("config")
-	manager.InitFlags(config)
+	manager.InitFlags(*config)
+	manager.AddConfigFlag(manager.Flags())
 	Root.PersistentFlags().AddFlagSet(manager.Flags())
 	Root.AddCommand(VersionCommand(Root))
-	manager.AddConfigFlag(Root.Flags())
+	Root.AddCommand(InitDBCommand(Root))
+	Root.AddCommand(ConfigCommand(Root))
 }
