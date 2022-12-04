@@ -32,7 +32,7 @@ const (
 
 // SetupOptions are used to setup the database.
 type SetupOptions struct {
-	Username           string `name:"user_name" description:"Username"`
+	Username           string `name:"username" description:"username"`
 	Password           string `name:"password" description:"password"`
 	RetentionPeriodHrs int    `name:"retention_period_hrs" description:"retention period in hours"`
 }

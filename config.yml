@@ -3,6 +3,19 @@ http:
 mqtt:
   address: "localhost:1883"
   debug: true
+  allowed-user-topics:
+    test: ["a/b"]
   auth:
     type: "htpasswd"
     htpasswd-file: "./test.htpasswd"
+database:
+  type: "influxdb"
+  influxdb:
+    bucket: "test"
+    address: "http://localhost:8086"
+    token: d78cb30af58f015c92d81e21f8eaf783
+    organization: "test"
+    setup:
+      username: "test"
+      password: "testtest"
+      retention_period_hrs: 1

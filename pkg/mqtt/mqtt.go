@@ -33,9 +33,10 @@ import (
 
 // Config is the configuration for the MQTT server.
 type Config struct {
-	Addr  string      `name:"address" description:"server address"`
-	Debug bool        `name:"debug" description:"enable debug mode"`
-	Auth  auth.Config `name:"auth" description:"authentication configuration"`
+	Addr              string              `name:"address" description:"server address"`
+	Debug             bool                `name:"debug" description:"enable debug mode"`
+	AllowedUserTopics map[string][]string `name:"allowed-user-topics" description:"list of topics allowed per username"`
+	Auth              auth.Config         `name:"auth" description:"authentication configuration"`
 }
 
 // Server is an MQTT server.
@@ -45,12 +46,18 @@ type Server struct {
 	auth auth.Store
 }
 
+type userSession struct {
+	ctx           context.Context
+	username      string
+	allowedTopics []string
+	srv           *Server
+}
+
 // New creates a new Server.
 func New(ctx context.Context, c Config) (*Server, error) {
 	if c.Debug {
 		apex.SetLevelFromString("debug")
 	}
-
 	auth, err := c.Auth.NewStore()
 	if err != nil {
 		return nil, err
@@ -102,12 +109,15 @@ func (s *Server) handleConnection(ctx context.Context, conn mqttnet.Conn) {
 		defer conn.Close()
 	}()
 
-	session := session.New(ctx, conn, s.deliver)
+	userSession := &userSession{
+		ctx: ctx,
+		srv: s,
+	}
+	session := session.New(ctx, conn, userSession.deliver)
 
 	// Handle the `CONNECT` packet. This method sends back `CONNACK` packet.
 	if err := session.ReadConnect(); err != nil {
-		// TODO: Add WithError semantics.
-		logger.Error(fmt.Sprintf("Read connect packet: %s", err))
+		logger.WithError(err).Error("Read connect packet: %s")
 		return
 	}
 	defer session.Close()
@@ -117,6 +127,9 @@ func (s *Server) handleConnection(ctx context.Context, conn mqttnet.Conn) {
 		logger.Error("Invalid credentials for user")
 		return
 	}
+
+	userSession.allowedTopics = s.c.AllowedUserTopics[session.AuthInfo().Username]
+	userSession.username = session.AuthInfo().Username
 
 	controlCh := make(chan packet.ControlPacket)
 	errCh := make(chan error, 1)
@@ -162,8 +175,16 @@ func (s *Server) handleConnection(ctx context.Context, conn mqttnet.Conn) {
 }
 
 // deliver is a callback attached to the initial session to read all submitted packets.
-func (s *Server) deliver(pkt *packet.PublishPacket) {
-
-	// Only store required topics.
-	fmt.Println("Received packet:", pkt)
+func (session *userSession) deliver(pkt *packet.PublishPacket) {
+	// Check if the topic is allowed for the user.
+	for _, topic := range session.allowedTopics {
+		if topic == pkt.TopicName {
+			fmt.Println("Received packet:", pkt)
+			return
+		}
+		logger.LoggerFromContext(session.ctx).
+			WithField("username", session.username).
+			WithField("topic", pkt.TopicName).
+			Error("User not allowed to publish to topic")
+	}
 }

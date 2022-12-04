@@ -123,6 +123,7 @@ func Execute() {
 func init() {
 	manager = conf.New("config")
 	manager.InitFlags(*config)
+	// This line is needed to persist the config file to subcommands.
 	manager.AddConfigFlag(manager.Flags())
 	Root.PersistentFlags().AddFlagSet(manager.Flags())
 	Root.AddCommand(VersionCommand(Root))

@@ -25,7 +25,7 @@ import (
 
 // Config defines the database configuration.
 type Config struct {
-	Type     string          `name:"type" description:"The type of database to use. Ex: influxdb"`
+	Type     string          `name:"type" description:"The type of database to use. Supported values are 'influxdb'"`
 	InfluxDB influxdb.Config `name:"influxdb"`
 }
 

@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 // ConfigCommand prints the configuration read.
@@ -25,10 +26,14 @@ func ConfigCommand(root *cobra.Command) *cobra.Command {
 	return &cobra.Command{
 		Use:   "config",
 		Short: "Display config information",
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Config:-------")
-			fmt.Println(config)
-			fmt.Println("-------")
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Println("Config\n------")
+			v, err := yaml.Marshal(config)
+			if err != nil {
+				return err
+			}
+			fmt.Print(string(v))
+			return nil
 		},
 	}
 }
