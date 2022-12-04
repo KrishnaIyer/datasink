@@ -16,6 +16,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -27,6 +28,10 @@ import (
 	"krishnaiyer.dev/golang/datasink/pkg/mqtt"
 	conf "krishnaiyer.dev/golang/dry/pkg/config"
 	logger "krishnaiyer.dev/golang/dry/pkg/logger"
+)
+
+const (
+	defaultBufferSize = 64
 )
 
 // Config contains the configuration.
@@ -72,6 +77,15 @@ var (
 			errCh := make(chan error)
 			defer close(errCh)
 
+			var database database.Database
+			switch config.Database.Type {
+			case "influxdb":
+				// Create Client.
+				client := config.Database.InfluxDB.NewClient(ctx)
+				database = client
+			}
+			defer database.Close(ctx)
+
 			// Start the HTTP Server.
 			go func() {
 				s := http.New(config.HTTP)
@@ -83,8 +97,10 @@ var (
 			}()
 
 			// Start the MQTT Server.
+			messageCh := make(chan mqtt.Message, defaultBufferSize)
+			defer close(messageCh)
 			go func() {
-				s, err := mqtt.New(ctx, config.MQTT)
+				s, err := mqtt.New(ctx, config.MQTT, messageCh)
 				if err != nil {
 					errCh <- err
 					return
@@ -93,6 +109,22 @@ var (
 				if err != nil {
 					errCh <- err
 					return
+				}
+			}()
+
+			// Listen for messages and write to database.
+			go func() {
+				for {
+					select {
+					case <-ctx.Done():
+						return
+					case msg := <-messageCh:
+						fmt.Println(msg)
+						// err := database.Write(ctx, msg)
+						// if err != nil {
+						// 	l.WithError(err).Error("Error writing to database")
+						// }
+					}
 				}
 			}()
 

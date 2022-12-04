@@ -35,4 +35,6 @@ type Database interface {
 	Record(ctx context.Context, entry entry.Entry) error
 	// Query queries the database.
 	Query(ctx context.Context, query string) (map[time.Time]any, error)
+	// Close closes the database.
+	Close(ctx context.Context)
 }

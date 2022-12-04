@@ -41,9 +41,16 @@ type Config struct {
 
 // Server is an MQTT server.
 type Server struct {
-	srv  mqtt.Server
-	c    Config
-	auth auth.Store
+	srv   mqtt.Server
+	c     Config
+	auth  auth.Store
+	msgCh chan Message
+}
+
+// Message is a message received on the MQTT server.
+type Message struct {
+	Topic   string
+	Payload []byte
 }
 
 type userSession struct {
@@ -54,7 +61,7 @@ type userSession struct {
 }
 
 // New creates a new Server.
-func New(ctx context.Context, c Config) (*Server, error) {
+func New(ctx context.Context, c Config, messagesCh chan Message) (*Server, error) {
 	if c.Debug {
 		apex.SetLevelFromString("debug")
 	}
@@ -63,9 +70,10 @@ func New(ctx context.Context, c Config) (*Server, error) {
 		return nil, err
 	}
 	return &Server{
-		srv:  mqtt.New(ctx),
-		c:    c,
-		auth: auth,
+		srv:   mqtt.New(ctx),
+		c:     c,
+		auth:  auth,
+		msgCh: messagesCh,
 	}, nil
 }
 
@@ -80,7 +88,10 @@ func (s *Server) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer lis.Close()
+	defer func() {
+		lis.Close()
+		logger.Info("Stop MQTT server")
+	}()
 
 	logger.WithField("address", s.c.Addr).Info("Start MQTT server")
 
@@ -174,12 +185,32 @@ func (s *Server) handleConnection(ctx context.Context, conn mqttnet.Conn) {
 	}
 }
 
+// TODO: Fix this function to allow wildcards.
+// Currently it doesn't take different sizes of topics into account.
+func isTopicAllowed(requested, allowed []string) bool {
+	for i, part := range requested {
+		if part == allowed[i] || allowed[i] == "#" {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
 // deliver is a callback attached to the initial session to read all submitted packets.
 func (session *userSession) deliver(pkt *packet.PublishPacket) {
 	// Check if the topic is allowed for the user.
 	for _, topic := range session.allowedTopics {
 		if topic == pkt.TopicName {
-			fmt.Println("Received packet:", pkt)
+			select {
+			case <-session.ctx.Done():
+				return
+			default:
+				session.srv.msgCh <- Message{
+					Topic:   pkt.TopicName,
+					Payload: pkt.Message,
+				}
+			}
 			return
 		}
 		logger.LoggerFromContext(session.ctx).
