@@ -18,4 +18,16 @@ database:
     setup:
       username: "test"
       password: "testtest"
-      retention_period_hrs: 1
+devices:
+  smart-meter:
+    values:
+      electricity_equipment_id: string
+      gas_equipment_id: string
+      wifi_rssi: int
+      gas_hourly_usage: float
+      electricity_hourly_usage: float
+      electricity_delivered_1: float
+      electricity_returned_1: float
+      electricity_delivered_2: float
+      electricity_returned_2: float
+      delivered: float # Gas delivered

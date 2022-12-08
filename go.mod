@@ -6,7 +6,6 @@ require (
 	github.com/TheThingsIndustries/mystique v0.0.0-20221125120501-80ab21781b6d
 	github.com/gorilla/mux v1.8.0
 	github.com/influxdata/influxdb-client-go/v2 v2.12.1
-	github.com/smartystreets/assertions v1.0.0
 	github.com/spf13/cobra v1.6.1
 	github.com/tg123/go-htpasswd v1.2.0
 	gopkg.in/yaml.v2 v2.4.0

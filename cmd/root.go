@@ -24,7 +24,6 @@ import (
 	"github.com/spf13/cobra"
 	"krishnaiyer.dev/golang/datasink/pkg/database"
 	"krishnaiyer.dev/golang/datasink/pkg/device"
-	"krishnaiyer.dev/golang/datasink/pkg/device/smartmeter"
 	"krishnaiyer.dev/golang/datasink/pkg/http"
 	"krishnaiyer.dev/golang/datasink/pkg/mqtt"
 	conf "krishnaiyer.dev/golang/dry/pkg/config"
@@ -40,6 +39,7 @@ type Config struct {
 	HTTP     http.Config     `name:"http"`
 	MQTT     mqtt.Config     `name:"mqtt"`
 	Database database.Config `name:"database"`
+	Devices  device.Config   `name:"devices"`
 }
 
 var (
@@ -88,9 +88,6 @@ var (
 			}
 			defer database.Close(ctx)
 
-			// Setup Device parsers.
-			devices[smartmeter.Identifier] = smartmeter.Meter{}
-
 			// Start the HTTP Server.
 			go func() {
 				s := http.New(config.HTTP)
@@ -127,18 +124,14 @@ var (
 						if msg == nil {
 							continue
 						}
-						if len(msg.TopicParts) < 3 {
-							l.Warn("Invalid topic. Skip message")
-							continue
-						}
-						parser, ok := devices[msg.TopicParts[0]]
-						if !ok {
-							l.WithField("type", msg.TopicParts[0]).Warn("Unknown device type. Skip message")
-							continue
-						}
-						entry, err := parser.Parse(ctx, msg.Username, msg.TopicParts[1], msg.TopicParts[2], msg.Payload)
+						parser, err := config.Devices.GetParser(ctx, msg.Topic)
 						if err != nil {
-							l.WithError(err).Warn("Error parsing message. Skip message")
+							l.WithError(err).Warn("Skip message")
+							continue
+						}
+						entry, err := parser.Parse(ctx, msg.Username, msg.Topic, msg.Payload)
+						if err != nil {
+							l.WithError(err).Warn("Skip message")
 							continue
 						}
 						if entry != nil {

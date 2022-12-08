@@ -17,12 +17,28 @@ package device
 
 import (
 	"context"
+	"fmt"
 
 	"krishnaiyer.dev/golang/datasink/pkg/database/entry"
+	"krishnaiyer.dev/golang/datasink/pkg/device/smartmeter"
 )
+
+// Config is the configuration for devices.
+type Config struct {
+	SmartMeter smartmeter.Config `name:"smart-meter" description:"smartmeter configuration"`
+}
+
+func (c Config) GetParser(ctx context.Context, key string) (Device, error) {
+	if c.SmartMeter.SupportsKey(key) {
+		return c.SmartMeter, nil
+	}
+	return nil, fmt.Errorf("no device found for key %s", key)
+}
 
 // Device is an IoT device.
 type Device interface {
 	// Parse parses device data on a particular topic.
-	Parse(ctx context.Context, id, dataType, key string, value []byte) (*entry.Entry, error)
+	Parse(ctx context.Context, id, key string, value []byte) (*entry.Entry, error)
+	// SupportsKey returns true if the device supports the given key.
+	SupportsKey(key string) bool
 }

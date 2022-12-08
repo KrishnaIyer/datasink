@@ -49,9 +49,9 @@ type Server struct {
 
 // Message is a message received on the MQTT server.
 type Message struct {
-	Username   string
-	TopicParts []string
-	Payload    []byte
+	Username string
+	Topic    string
+	Payload  []byte
 }
 
 type userSession struct {
@@ -212,9 +212,9 @@ func (session *userSession) deliver(pkt *packet.PublishPacket) {
 		return
 	default:
 		session.srv.msgCh <- &Message{
-			Username:   session.username,
-			TopicParts: pkt.TopicParts,
-			Payload:    pkt.Message,
+			Username: session.username,
+			Topic:    pkt.TopicName,
+			Payload:  pkt.Message,
 		}
 	}
 }
