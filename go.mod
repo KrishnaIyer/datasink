@@ -3,16 +3,15 @@ module krishnaiyer.dev/golang/datasink
 go 1.19
 
 require (
-	github.com/TheThingsIndustries/mystique v0.0.0-20211230093812-d4088bd06959
+	github.com/TheThingsIndustries/mystique v0.0.0-20221125120501-80ab21781b6d
 	github.com/gorilla/mux v1.8.0
-	github.com/influxdata/influxdb-client-go/v2 v2.12.0
+	github.com/influxdata/influxdb-client-go/v2 v2.12.1
+	github.com/smartystreets/assertions v1.0.0
 	github.com/spf13/cobra v1.6.1
 	github.com/tg123/go-htpasswd v1.2.0
-	krishnaiyer.dev/golang/dry v0.0.0-20221129144751-2455943d63ac
+	gopkg.in/yaml.v2 v2.4.0
+	krishnaiyer.dev/golang/dry v0.0.0-20221204094448-a2d18c26bb44
 )
-
-// TODO: Remove this after the first release
-replace github.com/TheThingsIndustries/mystique => ../../../github.com/TheThingsIndustries/mystique
 
 require (
 	github.com/GehirnInc/crypt v0.0.0-20200316065508-bb7000b8a962 // indirect
@@ -51,6 +50,5 @@ require (
 	golang.org/x/time v0.0.0-20211116232009-f0f3c7e86c11 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -5,5 +5,17 @@ services:
     - ./.dev/influxdb:/var/lib/influxdb2
     ports:
     - 8086:8086
+  grafana:
+    image: grafana/grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_COOKIE_SAMESITE=disabled
+    volumes:
+      - ./.dev:/var/lib/grafana
+    depends_on:
+      - influxdb
+
 volumes:
   influxdb2:

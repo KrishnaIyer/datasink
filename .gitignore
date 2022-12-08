@@ -19,3 +19,5 @@ main
 
 # Development folder
 .dev
+
+*.DS_Store

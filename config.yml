@@ -1,10 +1,10 @@
 http:
   address: "localhost:8080"
 mqtt:
-  address: "localhost:1883"
+  address: "0.0.0.0:1883"
   debug: true
-  allowed-user-topics:
-    test: ["a/b"]
+  allowed-topic-prefix:
+    test: "dsmr" # Smart Gateways smart meter
   auth:
     type: "htpasswd"
     htpasswd-file: "./test.htpasswd"

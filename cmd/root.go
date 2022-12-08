@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -24,6 +23,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"krishnaiyer.dev/golang/datasink/pkg/database"
+	"krishnaiyer.dev/golang/datasink/pkg/device"
+	"krishnaiyer.dev/golang/datasink/pkg/device/smartmeter"
 	"krishnaiyer.dev/golang/datasink/pkg/http"
 	"krishnaiyer.dev/golang/datasink/pkg/mqtt"
 	conf "krishnaiyer.dev/golang/dry/pkg/config"
@@ -45,6 +46,7 @@ var (
 	config  = &Config{}
 	manager *conf.Manager
 	baseCtx = context.Background()
+	devices = make(map[string]device.Device)
 
 	// Root is the root of the commands.
 	Root = &cobra.Command{
@@ -86,6 +88,9 @@ var (
 			}
 			defer database.Close(ctx)
 
+			// Setup Device parsers.
+			devices[smartmeter.Identifier] = smartmeter.Meter{}
+
 			// Start the HTTP Server.
 			go func() {
 				s := http.New(config.HTTP)
@@ -97,7 +102,7 @@ var (
 			}()
 
 			// Start the MQTT Server.
-			messageCh := make(chan mqtt.Message, defaultBufferSize)
+			messageCh := make(chan *mqtt.Message, defaultBufferSize)
 			defer close(messageCh)
 			go func() {
 				s, err := mqtt.New(ctx, config.MQTT, messageCh)
@@ -119,11 +124,29 @@ var (
 					case <-ctx.Done():
 						return
 					case msg := <-messageCh:
-						fmt.Println(msg)
-						// err := database.Write(ctx, msg)
-						// if err != nil {
-						// 	l.WithError(err).Error("Error writing to database")
-						// }
+						if msg == nil {
+							continue
+						}
+						if len(msg.TopicParts) < 3 {
+							l.Warn("Invalid topic. Skip message")
+							continue
+						}
+						parser, ok := devices[msg.TopicParts[0]]
+						if !ok {
+							l.WithField("type", msg.TopicParts[0]).Warn("Unknown device type. Skip message")
+							continue
+						}
+						entry, err := parser.Parse(ctx, msg.Username, msg.TopicParts[1], msg.TopicParts[2], msg.Payload)
+						if err != nil {
+							l.WithError(err).Warn("Error parsing message. Skip message")
+							continue
+						}
+						if entry != nil {
+							err := database.Record(ctx, *entry)
+							if err != nil {
+								l.WithError(err).Error("Error writing to database")
+							}
+						}
 					}
 				}
 			}()

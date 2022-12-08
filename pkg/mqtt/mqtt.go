@@ -33,10 +33,10 @@ import (
 
 // Config is the configuration for the MQTT server.
 type Config struct {
-	Addr              string              `name:"address" description:"server address"`
-	Debug             bool                `name:"debug" description:"enable debug mode"`
-	AllowedUserTopics map[string][]string `name:"allowed-user-topics" description:"list of topics allowed per username"`
-	Auth              auth.Config         `name:"auth" description:"authentication configuration"`
+	Addr               string            `name:"address" description:"server address"`
+	Debug              bool              `name:"debug" description:"enable debug mode"`
+	Auth               auth.Config       `name:"auth" description:"authentication configuration"`
+	AllowedTopicPrefix map[string]string `name:"allowed-topic-prefix" description:"allowed topic prefix per username"`
 }
 
 // Server is an MQTT server.
@@ -44,24 +44,25 @@ type Server struct {
 	srv   mqtt.Server
 	c     Config
 	auth  auth.Store
-	msgCh chan Message
+	msgCh chan *Message
 }
 
 // Message is a message received on the MQTT server.
 type Message struct {
-	Topic   string
-	Payload []byte
+	Username   string
+	TopicParts []string
+	Payload    []byte
 }
 
 type userSession struct {
 	ctx           context.Context
 	username      string
-	allowedTopics []string
+	allowedPrefix string
 	srv           *Server
 }
 
 // New creates a new Server.
-func New(ctx context.Context, c Config, messagesCh chan Message) (*Server, error) {
+func New(ctx context.Context, c Config, messagesCh chan *Message) (*Server, error) {
 	if c.Debug {
 		apex.SetLevelFromString("debug")
 	}
@@ -139,7 +140,7 @@ func (s *Server) handleConnection(ctx context.Context, conn mqttnet.Conn) {
 		return
 	}
 
-	userSession.allowedTopics = s.c.AllowedUserTopics[session.AuthInfo().Username]
+	userSession.allowedPrefix = s.c.AllowedTopicPrefix[session.AuthInfo().Username]
 	userSession.username = session.AuthInfo().Username
 
 	controlCh := make(chan packet.ControlPacket)
@@ -199,23 +200,21 @@ func isTopicAllowed(requested, allowed []string) bool {
 
 // deliver is a callback attached to the initial session to read all submitted packets.
 func (session *userSession) deliver(pkt *packet.PublishPacket) {
-	// Check if the topic is allowed for the user.
-	for _, topic := range session.allowedTopics {
-		if topic == pkt.TopicName {
-			select {
-			case <-session.ctx.Done():
-				return
-			default:
-				session.srv.msgCh <- Message{
-					Topic:   pkt.TopicName,
-					Payload: pkt.Message,
-				}
-			}
-			return
+	logger := logger.LoggerFromContext(session.ctx).WithField("username", session.username)
+
+	logger.Info("Message received from client")
+
+	if len(pkt.TopicParts) == 0 || pkt.TopicParts[0] != session.allowedPrefix {
+		logger.WithField("topic", pkt.TopicName).Error("User not allowed to publish to topic")
+	}
+	select {
+	case <-session.ctx.Done():
+		return
+	default:
+		session.srv.msgCh <- &Message{
+			Username:   session.username,
+			TopicParts: pkt.TopicParts,
+			Payload:    pkt.Message,
 		}
-		logger.LoggerFromContext(session.ctx).
-			WithField("username", session.username).
-			WithField("topic", pkt.TopicName).
-			Error("User not allowed to publish to topic")
 	}
 }
