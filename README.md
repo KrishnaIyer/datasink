@@ -6,6 +6,52 @@ This project uses [mystique](https://github.com/TheThingsIndustries/mystique) fo
 
 ## Usage
 
+1. Create a configuration file based on the [provided default](./config.yml).
+
+2. Pull Docker images
+
+```bash
+$ docker-compose pull
+```
+
+3. Start the InfluxDB container.
+
+The example [docker-compose.yml](./docker-compose.yml) file starts InfluxDB with some defaults. Change these values if necessary and run the container.
+
+```bash
+$ docker-compose up -d influxdb
+```
+
+4. Initialize the database.
+
+```bash
+$ docker-compose run datasink datasink -c /etc/config.yml init-db
+```
+
+5. Create an `htpasswd` file with the MQTT login credentials.
+
+This process is different for each OS so look for the solution online. For unix-based OS, `htpasswd` is usually already installed.
+
+```bash
+$ htpasswd -c test.htpasswd <username>
+```
+
+6. Start the containers
+
+```bash
+$ docker-compose up -d
+```
+
+7. Connect a device via MQTT and send some data. The access credentials are the same as what goes into the `htpasswd` file.
+
+8. Login to Grafana at http://localhost:3000. This assumes the default configuration. If using a different port, that should reflect here.
+
+9. Add InfluxDB as a data source and use the `flux` option. For more details, check the [grafana docs](https://grafana.com/docs/grafana/latest/datasources/influxdb/).
+
+10. At this point, you should be able to create InfluxDB (flux) queries on your measurements.
+
+## Development
+
 1. Clone this repository.
 
 2. Initialize it locally.
@@ -13,35 +59,6 @@ This project uses [mystique](https://github.com/TheThingsIndustries/mystique) fo
 ```bash
 $ make init
 ```
-3. The example [docker-compose.yml](./docker-compose.yml) file starts Influx with some defaults. Change these values if necessary and run the container.
-
-```bash
-$ docker-compose up -d influxdb
-```
-
-4. Extract the Auth token required for the Go InfluxDB client to connect to the database.
-
-```bash
-$ docker exec datasink-influxdb-1 influx auth list | awk '/testuser/ {print $4 " "}'
-```
-> Note: Change the username (`testuser`) to the required value.
-
-This outputs a token similar to the following
-```
--siG5kFijoSri_J9h8NundRx1rXWbwHTAjNv2Mc07-PPZGo1rZw6a9pzY0yEPDvfncbkqwxS_X4I0xJOBejs9Q==
-```
-
-### Auth
-
-Create an htpasswd file.
-```
-$ htpasswd -c test.htpasswd test
-```
-
-## References
-
-1. Setting up InfluxDB via Docker: https://medium.com/geekculture/deploying-influxdb-2-0-using-docker-6334ced65b6c
-2. Getting started with InfluxDB and Go: https://www.influxdata.com/blog/getting-started-with-the-influxdb-go-client/
 
 ## License
 

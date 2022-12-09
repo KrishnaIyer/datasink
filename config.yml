@@ -1,5 +1,5 @@
 http:
-  address: "localhost:8080"
+  address: "0.0.0.0:8080"
 mqtt:
   address: "0.0.0.0:1883"
   debug: true
@@ -7,12 +7,12 @@ mqtt:
     test: "dsmr" # Smart Gateways smart meter
   auth:
     type: "htpasswd"
-    htpasswd-file: "./test.htpasswd"
+    htpasswd-file: "/etc/htpasswd"
 database:
   type: "influxdb"
   influxdb:
     bucket: "test"
-    address: "http://localhost:8086"
+    address: "http://influxdb:8086"
     token: d78cb30af58f015c92d81e21f8eaf783
     organization: "test"
     setup:
