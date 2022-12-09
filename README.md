@@ -6,6 +6,46 @@ This project uses [mystique](https://github.com/TheThingsIndustries/mystique) fo
 
 ## Usage
 
+```
+datasink is tool that acts as acts as a server with multiple protocols (ex: mqtt, websocket) for incoming traffic and writes to a time series database. More documentation at https://krishnaiyer.dev/golang/datasink
+
+Usage:
+  datasink [flags]
+  datasink [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  config      Display config information
+  help        Help about any command
+  init-db     Initialize the database
+  version     Display version information
+
+Flags:
+  -c, --config string                                              config file (Default; config.yml in the current directory) (default "./config.yml")
+      --database.influxdb.address string                           server address
+      --database.influxdb.bucket string                            data bucket
+      --database.influxdb.non_blocking_writes.batch_size int       batch size
+      --database.influxdb.non_blocking_writes.enabled              enable non-blocking writes
+      --database.influxdb.non_blocking_writes.flush_interval int   flush interval
+      --database.influxdb.organization string                      organization
+      --database.influxdb.setup.password string                    password
+      --database.influxdb.setup.retention_period_hrs int           retention period in hours
+      --database.influxdb.setup.username string                    username
+      --database.influxdb.token string                             auth token. Generate a random one using 'openssl rand -hex 32'
+      --database.influxdb.write_timeout int                        write timeout in seconds (for blocking writes)
+      --database.type string                                       The type of database to use. Supported values are 'influxdb'
+      --devices.smart-meter.values strings                         Values to record and the corresponding data type
+  -h, --help                                                       help for datasink
+      --http.address string                                        server address
+      --mqtt.address string                                        server address
+      --mqtt.allowed-topic-prefix strings                          allowed topic prefix per username
+      --mqtt.auth.htpasswd-file string                             location of the htpasswd file
+      --mqtt.auth.type string                                      authentication file type. Supported values are 'htpasswd'
+      --mqtt.debug                                                 enable debug mode
+
+Use "datasink [command] --help" for more information about a command.
+```
+
 1. Create a configuration file based on the [provided default](./config.yml).
 
 2. Pull Docker images
